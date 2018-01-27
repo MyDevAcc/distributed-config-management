@@ -1,0 +1,129 @@
+enum ConfigHost {
+	CONSUL, VAULT
+}
+
+enum ConfigSource {
+	ARTIFACTORY, CONFIG_MANAGER_UI, UNKNOWN
+}
+
+enum ConfigFormat {
+	KV, YAML
+}
+
+enum DistributedConfigChangeStatus {
+	INPROGRESS, WAITING_FOR_LOCK, COMPLETED
+}
+
+enum DistributedConfigChangeState {
+	STARTED, FAILURE, SUCCESS
+}
+
+entity DistributedConfigChangeLogLock {
+    id  String required,
+    configHost ConfigHost required,
+    environmentName String required,
+    configHostSessionId String,
+	locked Boolean required,
+    lockGranted Instant required,
+    lockedBy String required,
+    comment String
+}
+
+entity DistributedConfigChangeLog {
+    id  String required,
+    environmentName String required,
+    configHost ConfigHost required,
+    configHostSessionId String,
+    configFormat ConfigFormat required,
+    configSource ConfigSource required,
+    state DistributedConfigChangeState required,
+    status DistributedConfigChangeStatus required,
+    removeLockTimeOut Long required,
+    executedBy String required,
+    executionStartDate Instant required,
+    executionFinishDate Instant,
+    comment String,
+    error String
+}
+
+entity DistributedConfigArtifactChangeLog {
+    id  String required,
+    serviceName String required,
+    repositoryName String required,
+    groupId String required,
+    artifactId String required,
+    version String required,
+    artifactLocalFilePath String required,
+    repositoryUrl String required,
+    dateExecuted Instant required,
+    comment String
+}
+
+entity DistributedConfigFileChangeLog {
+    id  String required,
+    configFileName String required,
+    configHostFileContentPath String required,
+    previousFileContent String,
+    fileContent String,
+    dateExecuted Instant required,
+    comment String
+}
+
+entity DistributedConfigKVChangeLog {
+    id  String required,
+    serviceName String required,
+    version String required,
+    configHostKeyPath String required,
+    key String required,
+    previousConfigValue String,
+    configValue String,
+    dateExecuted Instant required,
+    comment String
+}
+
+entity DistributedConfigKeyResource {
+	key String
+    configSource ConfigSource,
+    configHost ConfigHost required,
+    configHostKeyPath String required,
+    configFormat ConfigFormat
+    serviceName String required,
+    version String required,
+    managed Boolean,
+    foundOnConfigHost Boolean
+}
+
+entity DistributedConfigResource {
+    value String,
+    comment String
+}
+
+relationship OneToOne {
+	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
+    DistributedConfigKVChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
+    DistributedConfigFileChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
+    DistributedConfigResource{distributedConfigKeyResource(configHostPath) required} to DistributedConfigKeyResource
+}
+
+relationship ManyToOne {
+  	DistributedConfigArtifactChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog{distributedConfigArtifactChangeLog},
+  	DistributedConfigFileChangeLog{distributedConfigArtifactChangeLog required} to DistributedConfigArtifactChangeLog{distributedConfigFileChangeLog},
+  	DistributedConfigKVChangeLog{distributedConfigFileChangeLog} to DistributedConfigFileChangeLog{distributedConfigKVChangeLog}
+}
+
+
+relationship OneToOne {
+	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
+    DistributedConfigKVChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
+    DistributedConfigFileChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
+    DistributedConfigResource{distributedConfigKeyResource(configHostPath) required} to DistributedConfigKeyResource
+}
+
+relationship ManyToOne {
+  	DistributedConfigArtifactChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog{distributedConfigArtifactChangeLog},
+  	DistributedConfigFileChangeLog{distributedConfigArtifactChangeLog required} to DistributedConfigArtifactChangeLog{distributedConfigFileChangeLog},
+  	DistributedConfigKVChangeLog{distributedConfigFileChangeLog} to DistributedConfigFileChangeLog{distributedConfigKVChangeLog}
+}
+
+paginate all with pagination
+service all with serviceImpl
