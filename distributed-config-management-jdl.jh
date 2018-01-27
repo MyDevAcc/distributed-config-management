@@ -132,7 +132,8 @@ relationship OneToMany {
   	DistributedConfigDeployment{distributedConfigArtifact required} to DistributedConfigArtifact
 }
 
-relationship OneToOne {
+relationship OneToOne {	
+	DistributedConfigChangeLog {distributedConfigDeployment} to DistributedConfigDeployment,
 	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigKVChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigFileChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
