@@ -1,3 +1,7 @@
+enum LaunchInterface {
+	CONFIG_MANAGER_UI, CLI
+}
+
 enum ConfigHost {
 	CONSUL, VAULT
 }
@@ -18,6 +22,27 @@ enum DistributedConfigChangeState {
 	STARTED, FAILURE, SUCCESS
 }
 
+entity DistributedConfigDeployment {
+	environmentName String required,
+    configFormat ConfigFormat required,
+    launchInterface LaunchInterface required,
+    removeLockTimeOut Integer
+}
+
+entity DistributedConfigRepository {
+	name String required,
+	url String required
+}
+
+entity DistributedConfigArtifact {
+	repositoryName String required,
+    groupId String required,
+    artifactId String required,
+    version String required,
+    fileNamePostFix String required,
+    fileExtension String required
+}
+
 entity DistributedConfigChangeLogLock {
     id  String required,
     configHost ConfigHost required,
@@ -36,6 +61,7 @@ entity DistributedConfigChangeLog {
     configHostSessionId String,
     configFormat ConfigFormat required,
     configSource ConfigSource required,
+    launchInterface LaunchInterface required,
     state DistributedConfigChangeState required,
     status DistributedConfigChangeStatus required,
     removeLockTimeOut Long required,
@@ -99,18 +125,12 @@ entity DistributedConfigResource {
 }
 
 relationship OneToOne {
-	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
-    DistributedConfigKVChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
-    DistributedConfigFileChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
-    DistributedConfigResource{distributedConfigKeyResource(configHostPath) required} to DistributedConfigKeyResource
+	DistributedConfigDeployment {name required} to DistributedConfigRepository
 }
 
-relationship ManyToOne {
-  	DistributedConfigArtifactChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog{distributedConfigArtifactChangeLog},
-  	DistributedConfigFileChangeLog{distributedConfigArtifactChangeLog required} to DistributedConfigArtifactChangeLog{distributedConfigFileChangeLog},
-  	DistributedConfigKVChangeLog{distributedConfigFileChangeLog} to DistributedConfigFileChangeLog{distributedConfigKVChangeLog}
+relationship OneToMany {
+  	DistributedConfigDeployment{distributedConfigArtifact required} to DistributedConfigArtifact
 }
-
 
 relationship OneToOne {
 	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
