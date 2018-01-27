@@ -22,11 +22,15 @@ enum DistributedConfigChangeState {
 	STARTED, FAILURE, SUCCESS
 }
 
-entity DistributedConfigDeployment {
+entity DistributedConfigSetup {
+    name String required,
 	environmentName String required,
-    configFormat ConfigFormat required,
     launchInterface LaunchInterface required,
     removeLockTimeOut Integer
+}
+
+entity DistributedConfigDeployment {
+    configFormat ConfigFormat required
 }
 
 entity DistributedConfigRepository {
@@ -64,7 +68,6 @@ entity DistributedConfigChangeLog {
     launchInterface LaunchInterface required,
     state DistributedConfigChangeState required,
     status DistributedConfigChangeStatus required,
-    removeLockTimeOut Long required,
     executedBy String required,
     executionStartDate Instant required,
     executionFinishDate Instant,
@@ -125,14 +128,15 @@ entity DistributedConfigResource {
 }
 
 relationship OneToOne {
-	DistributedConfigDeployment {name required} to DistributedConfigRepository
+	DistributedConfigDeployment {distributedConfigSetup required} to DistributedConfigSetup,
+	DistributedConfigSetup {distributedConfigRepository required} to DistributedConfigRepository
 }
 
 relationship OneToMany {
   	DistributedConfigDeployment{distributedConfigArtifact required} to DistributedConfigArtifact
 }
 
-relationship OneToOne {	
+relationship OneToOne {
 	DistributedConfigChangeLog {distributedConfigDeployment} to DistributedConfigDeployment,
 	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigKVChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
