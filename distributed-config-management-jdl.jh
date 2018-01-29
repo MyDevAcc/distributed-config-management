@@ -1,5 +1,5 @@
-enum LaunchInterface {
-	CONFIG_MANAGER_UI, CLI
+enum DeploymentInterface {
+	UI, CLI, STANDALONE
 }
 
 enum ConfigHost {
@@ -7,7 +7,7 @@ enum ConfigHost {
 }
 
 enum ConfigSource {
-	ARTIFACTORY, CONFIG_MANAGER_UI, UNKNOWN
+	ARTIFACTORY, DISTRIBUTED_CONFIG_MANAGEMENT, UNKNOWN
 }
 
 enum ConfigFormat {
@@ -22,20 +22,11 @@ enum DistributedConfigChangeState {
 	STARTED, FAILURE, SUCCESS
 }
 
-entity DistributedConfigSetup {
-    name String required,
-	environmentName String required,
-    launchInterface LaunchInterface required,
-    removeLockTimeOut Integer
-}
-
-entity DistributedConfigDeployment {
-    configFormat ConfigFormat required
-}
-
-entity DistributedConfigRepository {
+entity DistributedConfigArtifactRepository {
 	name String required,
-	url String required
+	url String required,
+	userName String required,
+	password String required
 }
 
 entity DistributedConfigArtifact {
@@ -47,32 +38,11 @@ entity DistributedConfigArtifact {
     fileExtension String required
 }
 
-entity DistributedConfigChangeLogLock {
-    id  String required,
-    configHost ConfigHost required,
-    environmentName String required,
-    configHostSessionId String,
-	locked Boolean required,
-    lockGranted Instant required,
-    lockedBy String required,
-    comment String
-}
-
-entity DistributedConfigChangeLog {
-    id  String required,
-    environmentName String required,
-    configHost ConfigHost required,
-    configHostSessionId String,
-    configFormat ConfigFormat required,
-    configSource ConfigSource required,
-    launchInterface LaunchInterface required,
-    state DistributedConfigChangeState required,
-    status DistributedConfigChangeStatus required,
-    executedBy String required,
-    executionStartDate Instant required,
-    executionFinishDate Instant,
-    comment String,
-    error String
+entity DistributedConfigConfiguration {
+    name String required,
+    productName String required,
+	environmentName String required,
+    removeLockTimeOut Integer required
 }
 
 entity DistributedConfigArtifactChangeLog {
@@ -127,17 +97,51 @@ entity DistributedConfigResource {
     comment String
 }
 
-relationship OneToOne {
-	DistributedConfigDeployment {distributedConfigSetup required} to DistributedConfigSetup,
-	DistributedConfigSetup {distributedConfigRepository required} to DistributedConfigRepository
+entity DistributedConfigChangeLog {
+    id  String required,
+    configHost ConfigHost required,
+    configHostSessionId String,
+    configFormat ConfigFormat required,
+    configSource ConfigSource required,
+    deploymentInterface DeploymentInterface required,
+    state DistributedConfigChangeState required,
+    status DistributedConfigChangeStatus required,
+    executedBy String required,
+    executionStartDate Instant required,
+    executionFinishDate Instant,
+    comment String,
+    error String
 }
 
-relationship OneToMany {
-  	DistributedConfigDeployment{distributedConfigArtifact required} to DistributedConfigArtifact
+entity DistributedConfigDeployment {
+    configHost ConfigHost required,
+    configFormat ConfigFormat required,
+    deploymentInterface DeploymentInterface required,
+    start Boolean
+}
+
+entity DistributedConfigChangeLogLock {
+    id  String required,
+    configHost ConfigHost required,
+    configHostSessionId String,
+	locked Boolean required,
+    lockGranted Instant required,
+    lockedBy String required,
+    comment String
+}
+
+
+relationship OneToOne {
+	DistributedConfigDeployment {distributedConfigConfiguration(name) required} to DistributedConfigConfiguration,
+	DistributedConfigDeployment {distributedConfigChangeLog} to DistributedConfigChangeLog,
+    DistributedConfigConfiguration {distributedConfigArtifactRepository(name) required} to DistributedConfigArtifactRepository
+}
+
+relationship ManyToMany {
+  	DistributedConfigDeployment{distributedConfigArtifact(artifactId)} to DistributedConfigArtifact{distributedConfigDeployment}
 }
 
 relationship OneToOne {
-	DistributedConfigChangeLog {distributedConfigDeployment} to DistributedConfigDeployment,
 	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigKVChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigFileChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
@@ -149,6 +153,7 @@ relationship ManyToOne {
   	DistributedConfigFileChangeLog{distributedConfigArtifactChangeLog required} to DistributedConfigArtifactChangeLog{distributedConfigFileChangeLog},
   	DistributedConfigKVChangeLog{distributedConfigFileChangeLog} to DistributedConfigFileChangeLog{distributedConfigKVChangeLog}
 }
+
 
 paginate all with pagination
 service all with serviceImpl
