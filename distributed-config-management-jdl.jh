@@ -38,12 +38,9 @@ entity DistributedConfigArtifact {
 }
 
 entity DistributedConfigDeploymentArtifact {
-	repositoryName String required,
-    groupId String required,
-    artifactId String required,
-    version String required,
-    fileNamePostFix String required,
-    fileExtension String required
+    deploymentName String,
+    artifactVersion String required,
+    artifactFullName String
 }
 
 entity DistributedConfigConfiguration {
@@ -53,23 +50,28 @@ entity DistributedConfigConfiguration {
     removeLockTimeOut Integer required
 }
 
+entity DistributedConfigDeployment {
+    name String required,
+    configHost ConfigHost required,
+    configFormat ConfigFormat required,
+    deploymentInterface DeploymentInterface required,
+    start Boolean
+}
+
 entity DistributedConfigArtifactChangeLog {
-    id  String required,
     serviceName String required,
     repositoryName String required,
     groupId String required,
     artifactId String required,
     version String required,
-    artifactLocalFilePath String required,
-    repositoryUrl String required,
     dateExecuted Instant required,
     comment String
 }
 
 entity DistributedConfigResourceChangeLog {
-    id  String required,
+    version String required,
     configFormat ConfigFormat required,
-    configHostConfigValuePath String required,
+    configHostKeyPath String required,
     key String required,
     configValue String,
     previousConfigValue String,
@@ -79,7 +81,6 @@ entity DistributedConfigResourceChangeLog {
 }
 
 entity DistributedConfigChangeLog {
-    id  String required,
     configHost ConfigHost required,
     configHostSessionId String,
     configFormat ConfigFormat required,
@@ -95,10 +96,10 @@ entity DistributedConfigChangeLog {
 }
 
 entity DistributedConfigResourceKey {
+    configHostKeyPath String required,
 	key String
     configSource ConfigSource,
     configHost ConfigHost required,
-    configHostKeyPath String required,
     configFormat ConfigFormat
     serviceName String required,
     version String required,
@@ -111,15 +112,7 @@ entity DistributedConfigResource {
     comment String
 }
 
-entity DistributedConfigDeployment {
-    configHost ConfigHost required,
-    configFormat ConfigFormat required,
-    deploymentInterface DeploymentInterface required,
-    start Boolean
-}
-
 entity DistributedConfigChangeLogLock {
-    id  String required,
     configHost ConfigHost required,
     configHostSessionId String,
 	locked Boolean required,
@@ -128,22 +121,24 @@ entity DistributedConfigChangeLogLock {
     comment String
 }
 
+
 relationship OneToOne {
 	DistributedConfigDeployment {distributedConfigConfiguration(name) required} to DistributedConfigConfiguration,
 	DistributedConfigDeployment {distributedConfigChangeLog} to DistributedConfigChangeLog,
-    DistributedConfigConfiguration {distributedConfigArtifactRepository(name) required} to DistributedConfigArtifactRepository
+    DistributedConfigConfiguration {distributedConfigArtifactRepository(name) required} to DistributedConfigArtifactRepository,
+    DistributedConfigDeploymentArtifact {distributedConfigArtifact(artifactId) required} to DistributedConfigArtifact
 }
 
 relationship ManyToMany {
-  	DistributedConfigDeployment{distributedConfigArtifact(artifactId)} to DistributedConfigArtifact{distributedConfigDeployment}
+  	DistributedConfigDeployment{distributedConfigDeploymentArtifact(artifactFullName) required} to DistributedConfigDeploymentArtifact
 }
 
 relationship OneToOne {
 	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigResourceChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
-    DistributedConfigResource{latestDistributedConfigResourceChangeLog(configHostKeyPath)} to DistributedConfigResourceChangeLog,
-    DistributedConfigResource{distributedConfigKeyResource(configHostPath) required} to DistributedConfigResourceKey,
-    DistributedConfigResourceKey{latestDistributedConfigResourceChangeLog(configHostKeyPath)} to DistributedConfigResourceChangeLog
+    DistributedConfigResource{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog,
+    DistributedConfigResource{distributedConfigKeyResource(configHostKeyPath) required} to DistributedConfigResourceKey,
+    DistributedConfigResourceKey{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog
 }
 
 relationship ManyToOne {
@@ -151,7 +146,8 @@ relationship ManyToOne {
   	DistributedConfigResourceChangeLog{distributedConfigArtifactChangeLog} to DistributedConfigArtifactChangeLog{distributedConfigResourceChangeLog}
 }
 
+
 paginate all with pagination
 service all with serviceImpl
 
-microservice all with distributedconfigmanagement
+/*microservice all with distributedconfigmanagement*/
