@@ -38,9 +38,9 @@ entity DistributedConfigArtifact {
 }
 
 entity DistributedConfigDeploymentArtifact {
-    deploymentName String,
     artifactVersion String required,
-    artifactFullName String
+    artifactFullName String,
+    deploymentId String
 }
 
 entity DistributedConfigConfiguration {
@@ -91,6 +91,9 @@ entity DistributedConfigChangeLog {
     executedBy String required,
     executionStartDate Instant required,
     executionFinishDate Instant,
+    numOfArtifacts Integer,
+    numOfFiles Integer,
+    numOfKeys Integer,
     comment String,
     error String
 }
