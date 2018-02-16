@@ -2,6 +2,10 @@ enum DeploymentInterface {
 	UI, CLI, STANDALONE
 }
 
+enum DeploymentScope {
+ 	APPLICATION, SERVICE
+}
+
 enum ConfigHost {
 	CONSUL, VAULT
 }
@@ -22,14 +26,34 @@ enum DistributedConfigChangeState {
 	STARTED, FAILURE, SUCCESS
 }
 
-entity DistributedConfigArtifactRepository {
+entity Application {
+	name String required,
+	productName String required,
+    description String required
+}
+
+entity ApplicationMicroservice (AppMcrSrv) {
+	name String required,
+	longName String required,
+    description String required
+}
+
+entity DistributedConfigArtifactRepository (DCAR) {
 	name String required,
 	url String required,
 	userName String required,
 	password String required
 }
 
-entity DistributedConfigArtifact {
+entity DistributedConfigConfiguration (DCC) {
+    name String required,
+	environmentName String required,
+	management Boolean,
+    waitForLockTimeOut Integer required
+}
+
+
+entity DistributedConfigArtifact (DCA) {
 	repositoryName String required,
     groupId String required,
     artifactId String required,
@@ -37,28 +61,22 @@ entity DistributedConfigArtifact {
     fileExtension String required
 }
 
-entity DistributedConfigDeploymentArtifact {
+entity DistributedConfigDeploymentArtifact (DCDR) {
     artifactVersion String required,
     artifactFullName String,
     deploymentId String
 }
 
-entity DistributedConfigConfiguration {
+entity DistributedConfigDeployment (DCD) {
     name String required,
-    productName String required,
-	environmentName String required,
-    removeLockTimeOut Integer required
-}
-
-entity DistributedConfigDeployment {
-    name String required,
+    deploymentScope DeploymentScope required,
     configHost ConfigHost required,
     configFormat ConfigFormat required,
     deploymentInterface DeploymentInterface required,
     start Boolean
 }
 
-entity DistributedConfigArtifactChangeLog {
+entity DistributedConfigArtifactChangeLog (DCAC) {
     serviceName String required,
     repositoryName String required,
     groupId String required,
@@ -68,7 +86,7 @@ entity DistributedConfigArtifactChangeLog {
     comment String
 }
 
-entity DistributedConfigResourceChangeLog {
+entity DistributedConfigResourceChangeLog (DCRCL) {
     version String required,
     configFormat ConfigFormat required,
     configHostKeyPath String required,
@@ -80,7 +98,8 @@ entity DistributedConfigResourceChangeLog {
     comment String
 }
 
-entity DistributedConfigChangeLog {
+entity DistributedConfigChangeLog (DCCL) {
+    deploymentScope DeploymentScope,
     configHost ConfigHost required,
     configHostSessionId String,
     configFormat ConfigFormat required,
@@ -98,7 +117,7 @@ entity DistributedConfigChangeLog {
     error String
 }
 
-entity DistributedConfigResourceKey {
+entity DistributedConfigResourceKey (DCRK) {
     configHostKeyPath String required,
 	key String
     configSource ConfigSource,
@@ -110,12 +129,12 @@ entity DistributedConfigResourceKey {
     foundOnConfigHost Boolean
 }
 
-entity DistributedConfigResource {
+entity DistributedConfigResource (DCR) {
     value String,
     comment String
 }
 
-entity DistributedConfigChangeLogLock {
+entity DistributedConfigChangeLogLock (DCCLL) {
     configHost ConfigHost required,
     configHostSessionId String,
 	locked Boolean required,
@@ -126,27 +145,37 @@ entity DistributedConfigChangeLogLock {
 
 
 relationship OneToOne {
+    DistributedConfigDeployment {application(name) required} to Application,
+    DistributedConfigDeployment {applicationMicroservice(name) required} to ApplicationMicroservice,
 	DistributedConfigDeployment {distributedConfigConfiguration(name) required} to DistributedConfigConfiguration,
 	DistributedConfigDeployment {distributedConfigChangeLog} to DistributedConfigChangeLog,
+    DistributedConfigConfiguration {application(name) required} to Application,
     DistributedConfigConfiguration {distributedConfigArtifactRepository(name) required} to DistributedConfigArtifactRepository,
+    DistributedConfigDeploymentArtifact {application(name) required} to Application,
+    DistributedConfigDeploymentArtifact {applicationMicroservice(name) required} to ApplicationMicroservice,
     DistributedConfigDeploymentArtifact {distributedConfigArtifact(artifactId) required} to DistributedConfigArtifact
+    DistributedConfigChangeLog {applicationMicroservice(name) required} to ApplicationMicroservice
 }
 
 relationship ManyToMany {
-  	DistributedConfigDeployment{distributedConfigDeploymentArtifact(artifactFullName) required} to DistributedConfigDeploymentArtifact
+  	DistributedConfigDeployment{distributedConfigDeploymentArtifacts(artifactFullName) required} to DistributedConfigDeploymentArtifact,
+  	DistributedConfigArtifact{applicationMicroservices(name) required} to ApplicationMicroservice{distributedConfigArtifact}
 }
 
 relationship OneToOne {
-	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
+	DistributedConfigChangeLogLock {application(name) required} to Application,
+	DistributedConfigChangeLogLock {applicationMicroservice(name) required} to ApplicationMicroservice,
+   	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigResourceChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigResource{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog,
-    DistributedConfigResource{distributedConfigKeyResource(configHostKeyPath) required} to DistributedConfigResourceKey,
+    DistributedConfigResource{distributedConfigResourceKey(configHostKeyPath) required} to DistributedConfigResourceKey,
     DistributedConfigResourceKey{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog
 }
 
 relationship ManyToOne {
   	DistributedConfigArtifactChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog{distributedConfigArtifactChangeLog},
-  	DistributedConfigResourceChangeLog{distributedConfigArtifactChangeLog} to DistributedConfigArtifactChangeLog{distributedConfigResourceChangeLog}
+  	DistributedConfigResourceChangeLog{distributedConfigArtifactChangeLog} to DistributedConfigArtifactChangeLog{distributedConfigResourceChangeLog},
+  	ApplicationMicroservice{application(name) required} to Application{name}
 }
 
 
