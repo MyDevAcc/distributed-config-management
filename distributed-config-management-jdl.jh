@@ -111,18 +111,22 @@ entity DistributedConfigChangeLog (DCCL) {
     executionStartDate Instant required,
     executionFinishDate Instant,
     numOfArtifacts Integer,
-    numOfFiles Integer,
-    numOfKeys Integer,
+    numOfFilesAdded Integer,
+    numOfKeysAdded Integer,
+    numOfFilesDeleted Integer,
+    numOfKeysDeleted Integer,
     comment String,
     error String
 }
 
 entity DistributedConfigResourceKey (DCRK) {
-    configHostKeyPath String required,
-	key String
-    configSource ConfigSource,
+    key String,
     configHost ConfigHost required,
-    configFormat ConfigFormat
+    configFormat ConfigFormat,
+    configHostKeyPath String required,
+    context String required,
+    profile String,
+    configSource ConfigSource,
     serviceName String required,
     version String required,
     managed Boolean,
@@ -130,8 +134,36 @@ entity DistributedConfigResourceKey (DCRK) {
 }
 
 entity DistributedConfigResource (DCR) {
+    key String,
     value String,
+    configHost ConfigHost required,
+    configFormat ConfigFormat,
+    configHostKeyPath String required,
+    context String required,
+    profile String,
+    configSource ConfigSource,
+    serviceName String required,
+    version String required,
+    managed Boolean,
+    foundOnConfigHost Boolean,
     comment String
+}
+
+entity UnManagedDistributedConfigResource (UMDCR) {
+	key String,
+    value String,
+    configHost ConfigHost required,
+    configFormat ConfigFormat required,
+    configHostKeyPath String required,
+    context String required
+}
+
+entity UnManagedDistributedConfigResourceKey (UMDCRK) {
+	key String,
+    configHost ConfigHost required,
+    configFormat ConfigFormat,
+    configHostKeyPath String required,
+    context String required
 }
 
 entity DistributedConfigChangeLogLock (DCCLL) {
@@ -139,8 +171,7 @@ entity DistributedConfigChangeLogLock (DCCLL) {
     configHostSessionId String,
 	locked Boolean required,
     lockGranted Instant required,
-    lockedBy String required,
-    comment String
+    lockedBy String required
 }
 
 
@@ -167,9 +198,7 @@ relationship OneToOne {
 	DistributedConfigChangeLogLock {applicationMicroservice(name) required} to ApplicationMicroservice,
    	DistributedConfigChangeLogLock {distributedConfigChangeLog required} to DistributedConfigChangeLog,
     DistributedConfigResourceChangeLog{distributedConfigChangeLog required} to DistributedConfigChangeLog,
-    DistributedConfigResource{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog,
-    DistributedConfigResource{distributedConfigResourceKey(configHostKeyPath) required} to DistributedConfigResourceKey,
-    DistributedConfigResourceKey{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog
+    DistributedConfigResource{latestDistributedConfigResourceChangeLog(version)} to DistributedConfigResourceChangeLog
 }
 
 relationship ManyToOne {
@@ -179,7 +208,7 @@ relationship ManyToOne {
 }
 
 
-paginate all with pagination
+paginate all with pagination except UnManagedDistributedConfigResource, UnManagedDistributedConfigResourceKey
 service all with serviceImpl
 
 /*microservice all with distributedconfigmanagement*/
